@@ -1,99 +1,113 @@
-# Matriz — pizarra de tareas para Mac
+# Matriz — a task board for Mac
 
-Una pizarra infinita para ordenar el día: lo que tiene que caer hoy, lo que
-estás haciendo, lo que programas, lo que delegas y lo que ignoras. Todo se
-guarda en tu ordenador. Sin cuenta, sin servidor y sin suscripción.
+**English** | [Español](README.es.md)
+
+An infinite board to sort your day: what must get done today, what you're
+working on, what you schedule, what you delegate and what you ignore.
+Everything is stored on your Mac. No account, no server, no subscription.
+
+The interface speaks **English and Spanish** — switch on the fly with the
+ES/EN button in the toolbar.
 
 ![Matriz](captura.png)
 
-Es la herramienta que usamos a diario en [DaybyDay Consulting](https://www.daybydayconsulting.com)
-y la compartimos tal cual.
+It's the tool we use daily at [DaybyDay Consulting](https://www.daybydayconsulting.com),
+shared as is.
 
-## Las zonas
+## The zones
 
-Las tarjetas se mueven con el ratón y cambian de estado según dónde las sueltes:
+Cards are dragged with the mouse and change state depending on where you
+drop them:
 
-| Zona | Para qué |
+| Zone | What it's for |
 | --- | --- |
-| **3 prioridades hoy** | Lo que tiene que quedar hecho hoy sí o sí. Se numera por su orden (1, 2, 3) y avisa en rojo si metes más de tres. |
-| **En ejecución** | Lo que estás haciendo ahora mismo. |
-| **Matriz** | El clásico de Eisenhower: Ejecutar / Programar / Delegar / Ignorar, según dónde caiga la tarjeta. |
-| **Programado** | Lo que tiene fecha. Se puede exportar a tu calendario (.ics, Google Calendar, Outlook). |
-| **Hecho** | Lo completado. Se puede archivar de golpe. |
+| **Today's 3 priorities** | What must be done today no matter what. Numbered in order (1, 2, 3), with a red warning if you go past three. |
+| **In progress** | What you're working on right now. |
+| **Matrix** | The classic Eisenhower grid: Do / Schedule / Delegate / Ignore, based on where the card lands. |
+| **Scheduled** | What has a date. Exports to your calendar (.ics, Google Calendar, Outlook). |
+| **Done** | What you finished. Can be archived in one go. |
 
-Cada tarjeta puede llevar proyecto, fecha, notas y subtareas con su barra de
-progreso. El buscador (tecla `/`) mira en títulos, proyectos, notas y
-subtareas a la vez.
+Every card can carry a project, date, notes and subtasks with a progress
+bar. The search box (key `/`) looks into titles, projects, notes and
+subtasks at once.
 
-## Usarla en el navegador (2 minutos)
+## Use it in the browser (2 minutes)
 
-1. Descarga [`matriz.html`](matriz.html).
-2. Ábrelo con doble clic (Chrome, Safari, el que uses).
-3. Doble clic sobre la pizarra y a escribir.
+1. Download [`matriz.html`](matriz.html).
+2. Open it with a double click (Chrome, Safari, whatever you use).
+3. Double-click on the board and start writing.
 
-No hay nada que instalar: es un solo archivo sin dependencias. Si quieres,
-lo editas.
+Nothing to install: it's a single file with no dependencies. Edit it if
+you feel like it.
 
-## App para Mac
+## Mac app
 
-La app es un envoltorio nativo del mismo `matriz.html` (WKWebView), con su
-icono en el Dock y ventana propia. Hay instrucciones con capturas en
+The app is a native wrapper around the same `matriz.html` (WKWebView),
+with its own icon in the Dock and its own window. There are instructions
+with screenshots at
 [daybydayconsulting.com/tools/matriz](https://www.daybydayconsulting.com/tools/matriz/).
 
-1. Descarga `Matriz.dmg` desde [Releases](../../releases).
-2. Arrastra Matriz a la carpeta Aplicaciones.
-3. Crea la carpeta `Documents/Matriz` y copia dentro el `matriz.html` que
-   viene en el disco:
+1. Download `Matriz.dmg` from [Releases](../../releases).
+2. Drag Matriz to the Applications folder.
+3. Create the `Documents/Matriz` folder and copy `matriz.html` from the
+   disk into it:
 
    ```bash
    mkdir -p ~/Documents/Matriz && cp /Volumes/Matriz/matriz.html ~/Documents/Matriz/
    ```
 
-4. Abre Matriz. La primera vez macOS pedirá permiso (la app no está
-   notarizada): Ajustes del Sistema → Privacidad y seguridad → *Abrir
-   igualmente*. O en Terminal: `xattr -cr /Applications/Matriz.app`.
+4. Open Matriz. The first time, macOS will ask for permission (the app
+   isn't notarized): System Settings → Privacy & Security → *Open Anyway*.
+   Or in Terminal: `xattr -cr /Applications/Matriz.app`.
 
-> La pizarra vive en `~/Documents/Matriz/matriz.html`. Editar ese archivo es
-> la forma de personalizarla o actualizarla.
+> The board lives in `~/Documents/Matriz/matriz.html`. Editing that file
+> is how you customize or update it.
 
-## Gestos y atajos
+## Gestures & shortcuts
 
-- **Doble clic** en el lienzo: nueva tarea.
-- **Arrastrar tarjetas**: moverlas. La zona decide: soltarla en Hecho la marca
-  como hecha, en la Matriz coge el cuadrante que le toca.
-- **Rueda / dos dedos**: desplazarse. **⌘ + rueda**: zoom. **`0`**: encajar todo.
-- **`/`**: buscar. **Enter**: saltar al siguiente resultado.
-- **`n`**: nueva tarea. **Espacio + arrastrar**: mover el lienzo.
-- **Un clic** en una tarjeta: su detalle (proyecto, fecha, notas, subtareas).
+- **Double-click** on the canvas: new task.
+- **Drag cards** around. The zone decides: drop one in Done and it's
+  marked as done, in the Matrix it takes the quadrant it lands in.
+- **Wheel / two fingers**: pan. **⌘ + wheel**: zoom. **`0`**: fit everything.
+- **`/`**: search. **Enter**: jump to the next result.
+- **`n`**: new task. **Space + drag**: pan the canvas.
+- **One click** on a card: its details (project, date, notes, subtasks).
 
-## Tus datos
+## Your data
 
-- Se guardan en el almacenamiento local de la app (y en el navegador, si usas
-  la versión web). Nada sale de tu ordenador.
-- `⋯ → Exportar copia (.json)` e `Importar copia`: el respaldo completo.
-- ¿Vienes de la versión de Chrome? `exportar-matriz.html` genera el JSON y
-  `Matriz.app/Contents/MacOS/Matriz --import backup.json` lo mete en la app.
+- Stored in the app's local storage (or the browser's, if you use the web
+  version). Nothing leaves your computer.
+- `⋯ → Export backup (.json)` and `Import backup`: the full backup.
+- Coming from the Chrome version? `exportar-matriz.html` generates the
+  JSON and `Matriz.app/Contents/MacOS/Matriz --import backup.json` loads
+  it into the app.
 
-## Estructura del repositorio
+## Repository layout
 
 ```
-matriz.html            La pizarra completa (HTML + CSS + JS, sin dependencias)
-exportar-matriz.html   Utilidad para exportar el almacenamiento del navegador
-captura.png            Captura para este README
+matriz.html            The whole board (HTML + CSS + JS, no dependencies)
+exportar-matriz.html   Helper to export the browser's local storage
+captura.png            Screenshot (English) for this README
+captura-es.png         Screenshot (Spanish)
+README.es.md           Readme in Spanish
 ```
 
-## Novedades
+## Changelog
 
-**2.1 — 5 de octubre de 2026**
-- Zona *3 prioridades hoy*: numeración automática por posición y aviso en rojo
-  si pasas de tres.
-- Zona *En ejecución*, para lo que estás haciendo ahora.
-- Las pizarras existentes se migran solas al abrir: no se pierde nada.
+**2.2 — October 5, 2026**
+- Full **English + Spanish interface**, switchable with the ES/EN button
+  (per browser/app language on first run).
 
-**2.0 — septiembre de 2026**
-- Primera versión de la app nativa para Mac.
+**2.1 — October 5, 2026**
+- *Today's 3 priorities* zone: automatic numbering by position and a red
+  warning when you go past three.
+- *In progress* zone for what you're doing right now.
+- Existing boards migrate by themselves on open: nothing is lost.
 
-## Licencia
+**2.0 — September 2026**
+- First release of the native Mac app.
 
-MIT (ver [LICENSE](LICENSE)). La marca DayByDay y el icono de la app son de
-DaybyDay Consulting y no están cubiertos por la licencia.
+## License
+
+MIT (see [LICENSE](LICENSE)). The DaybyDay brand and the app icon belong
+to DaybyDay Consulting and are not covered by the license.

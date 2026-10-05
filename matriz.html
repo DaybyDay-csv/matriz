@@ -322,6 +322,7 @@ html[data-theme="dark"] .seg button.on{color:#04101f}
     <span class="saved" id="savedAt"></span>
     <button class="btn btn-primary" id="btnNew">+ Nueva</button>
     <button class="btn icon" id="btnTheme" title="Tema claro / oscuro">◐</button>
+    <button class="btn sm" id="btnLang" title="Cambiar idioma">ES</button>
     <button class="btn icon" id="btnMenu" title="Más opciones">⋯</button>
   </div>
 </div>
@@ -358,6 +359,154 @@ const PALETTE = ["#2563eb","#059669","#d946ef","#ea580c","#0891b2","#7c3aed","#e
 
 const vp = $("#viewport"), world = $("#world");
 
+/* ------------------------------ idioma ---------------------------------- */
+/* Toda la interfaz vive en dos idiomas. Las tarjetas y los proyectos del
+   usuario, obviamente, no se tocan. T() traduce; %n se sustituye por el
+   número cuando la clave lo lleva. */
+let lang = String(navigator.language || "").toLowerCase().startsWith("es") ? "es" : "en";
+const I18N = {
+  es: {
+    docTitle:"Matriz — pizarra",
+    search:"Buscar en todo", searchPrev:"Anterior", searchNext:"Siguiente (Enter)", searchClear:"Limpiar",
+    saved:"Guardado", notSaved:"⚠ sin guardar", helpTitle:"Cómo se usa",
+    newTask:"+ Nueva", themeTitle:"Tema claro / oscuro", moreTitle:"Más opciones", langTitle:"Cambiar idioma",
+    hintbar:"Doble clic para añadir · arrastra el fondo para moverte · ⌘/Ctrl + rueda para zoom",
+    zoomOut:"Alejar", zoomIn:"Acercar", zoomFit:"Encajar todo", zoom100:"Volver al 100%",
+    zoneDone:"Hecho", zoneDoing:"En ejecución", zoneTop3:"3 prioridades hoy", zoneMatrix:"Matriz", zoneSched:"Programado", zoneFree:"Suelta en el lienzo",
+    hintDone:"Suelta aquí lo que completes", hintDoing:"Suelta aquí lo que estés haciendo ya", hintTop3:"Arrastra aquí las 3 que tienen que caer hoy", hintSched:"Suelta aquí lo que tenga fecha",
+    tidyTitle:"Ordenar lo que hay dentro", icsTitle:"Descargar todo en .ics", clearTitle:"Archivar lo hecho",
+    q0:"EJECUTAR", q1:"PROGRAMAR", q2:"DELEGAR", q3:"IGNORAR",
+    axImpPos:"+ Importante", axImpNeg:"− Importante", axUrgPos:"+ Urgente", axUrgNeg:"− Urgente",
+    tickDone:"Marcar como hecho", tickUndone:"Sacar de Hecho", noDate:"sin fecha", inProgress:"▶ en curso", rankTitle:"Prioridad %n de hoy",
+    compTitle:"Nueva tarea…", compProject:"Proyecto", compAdd:"Añadir", compHint:"Enter para añadir · Esc para cerrar",
+    findTitle:"Centrar en el lienzo", closeTitle:"Cerrar",
+    projectLabel:"Proyecto", projectPh:"Sin proyecto",
+    moveLabel:"Llevar a", segMatrix:"Matriz", segDoing:"En curso", segSched:"Programado", segDone:"Hecho",
+    dateLabel:"Fecha", gcal:"Enviar a Google Calendar", dlIcs:"Descargar .ics", dlIcsTitle:"Vale para Calendario de Mac y Outlook de escritorio",
+    subtasksLabel:"Subtareas", subtaskPh:"+ Añadir subtarea", removeTitle:"Quitar",
+    notesLabel:"Notas", notesPh:"Detalles, enlaces, contexto…",
+    dup:"Duplicar", del:"Eliminar", copySuffix:" (copia)",
+    undo:"Deshacer", nothingDone:"No hay nada en Hecho",
+    archiveConfirm:"¿Quitar del lienzo las %n tareas de Hecho? Puedes deshacerlo justo después.",
+    archived:"%n tareas archivadas",
+    noDateTasks:"Esas tareas todavía no tienen fecha", taskDeleted:"Tarea eliminada",
+    imported:"Copia importada", importBad:"Ese archivo no parece una copia de Matriz",
+    importConfirm:"Se sustituirán las %n tareas actuales por las del archivo. ¿Seguir?",
+    tipBackup:"Consejo: guarda una copia de vez en cuando", lastBackup:"Hace %n días de la última copia", exportNow:"Exportar ahora",
+    storageWarn:"Este navegador no deja guardar automáticamente. Usa ⋯ → Exportar copia antes de cerrar.",
+    menuTidy:"⌗  Ordenar todas las zonas", menuFit:"⤢  Encajar todo en pantalla", menuReset:"↺  Recolocar las zonas",
+    menuExport:"⤓  Exportar copia (.json)", menuImport:"⤒  Importar copia", menuIcs:"🗓  Descargar calendario (.ics)", menuHelp:"?  Cómo se usa / instalar",
+    projectPrefix:"Proyecto: ", fileSched:"programado", fileTask:"tarea",
+    helpUrl:"https://daybydayconsulting.com/tools/matriz", helpUrlLabel:"daybydayconsulting.com/tools/matriz",
+    help:[
+      { h:"Moverse por la pizarra", li:[
+        "Arrastra el fondo para desplazarte. El lienzo no tiene bordes.",
+        "Zoom con <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + rueda, o con los botones de abajo a la derecha. <kbd>0</kbd> encaja todo en pantalla.",
+        "Con el trackpad, dos dedos desplazan y pellizcar hace zoom." ]},
+      { h:"Tareas", li:[
+        "<b>Doble clic</b> en cualquier punto crea una tarea justo ahí.",
+        "Arrastra las tarjetas donde quieras: dentro de Hecho se marca sola, en Programado se le pide fecha y en la matriz coge su cuadrante según dónde caiga.",
+        "Una tarjeta puede quedarse fuera de todas las zonas, flotando en el lienzo. Es un sitio válido: ahí van las ideas sueltas.",
+        "El círculo de la esquina la da por hecha de un clic, y la devuelve si te equivocas.",
+        "Un clic abre el detalle: proyecto, fecha, notas y subtareas." ]},
+      { h:"Zonas", li:[
+        "<b>3 prioridades hoy</b> es la banda de arriba del todo: arrastra ahí lo que tiene que quedar hecho hoy sí o sí. Se numeran por su orden, de izquierda a derecha.",
+        "<b>En ejecución</b> es la banda verde: lo que estás haciendo ahora mismo.",
+        "Arrastra el título de una zona para moverla entera con lo que tenga dentro.",
+        "Estira el cuadradito de la esquina inferior derecha para agrandarla o encogerla.",
+        "El icono <b>⌗</b> del título ordena en rejilla lo que hay dentro, sin sacarlo de su cuadrante.",
+        "Si algo no te encaja, en <b>⋯ → Recolocar las zonas</b> vuelven a su sitio de fábrica." ]},
+      { h:"Idioma", li:[
+        "El botón <b>ES</b>/<b>EN</b> de la barra cambia toda la interfaz de idioma, al momento." ]},
+      { h:"Google Calendar y Outlook", li:[
+        "Abre una tarea, ponle fecha y pulsa Enviar a Google Calendar: se abre el evento ya relleno, solo hay que guardarlo.",
+        "El botón <b>↓</b> del título de Programado descarga todo en un .ics para importarlo de golpe." ]},
+      { h:"Buscar", li:[
+        "<kbd>/</kbd> enfoca el buscador. Busca en títulos, proyectos, notas y subtareas a la vez.",
+        "Con <kbd>Enter</kbd> saltas de un resultado al siguiente y el lienzo se centra en cada uno." ]},
+      { h:"Instalarlo como app", li:[
+        "Descarga la app nativa en <b>{{URL}}</b>.",
+        "¿Prefieres el archivo suelto? Guarda <code>matriz.html</code>, ábrelo con Chrome y usa <b>⋮ → Enviar, guardar y compartir → Crear acceso directo…</b> con <b>Abrir como ventana</b>." ]},
+      { h:"Los datos", li:[
+        "Se guardan en este ordenador. No salen a ningún servidor.",
+        "De vez en cuando usa <b>⋯ → Exportar copia</b>. Se recupera con Importar copia." ]}
+    ]
+  },
+  en: {
+    docTitle:"Matriz — task board",
+    search:"Search everything", searchPrev:"Previous", searchNext:"Next (Enter)", searchClear:"Clear",
+    saved:"Saved", notSaved:"⚠ not saved", helpTitle:"How to use",
+    newTask:"+ New", themeTitle:"Light / dark theme", moreTitle:"More options", langTitle:"Switch language",
+    hintbar:"Double-click to add · drag the background to pan · ⌘/Ctrl + wheel to zoom",
+    zoomOut:"Zoom out", zoomIn:"Zoom in", zoomFit:"Fit everything", zoom100:"Back to 100%",
+    zoneDone:"Done", zoneDoing:"In progress", zoneTop3:"Today's 3 priorities", zoneMatrix:"Matrix", zoneSched:"Scheduled", zoneFree:"Loose on the canvas",
+    hintDone:"Drop here what you finish", hintDoing:"Drop here what you're working on now", hintTop3:"Drag here the 3 that must be done today", hintSched:"Drop here what has a date",
+    tidyTitle:"Tidy up the cards inside", icsTitle:"Download everything as .ics", clearTitle:"Archive done items",
+    q0:"DO", q1:"SCHEDULE", q2:"DELEGATE", q3:"IGNORE",
+    axImpPos:"+ Important", axImpNeg:"− Important", axUrgPos:"+ Urgent", axUrgNeg:"− Urgent",
+    tickDone:"Mark as done", tickUndone:"Unmark as done", noDate:"no date", inProgress:"▶ in progress", rankTitle:"Today's priority %n",
+    compTitle:"New task…", compProject:"Project", compAdd:"Add", compHint:"Enter to add · Esc to close",
+    findTitle:"Center on canvas", closeTitle:"Close",
+    projectLabel:"Project", projectPh:"No project",
+    moveLabel:"Move to", segMatrix:"Matrix", segDoing:"In progress", segSched:"Scheduled", segDone:"Done",
+    dateLabel:"Date", gcal:"Send to Google Calendar", dlIcs:"Download .ics", dlIcsTitle:"Works with Mac Calendar and desktop Outlook",
+    subtasksLabel:"Subtasks", subtaskPh:"+ Add subtask", removeTitle:"Remove",
+    notesLabel:"Notes", notesPh:"Details, links, context…",
+    dup:"Duplicate", del:"Delete", copySuffix:" (copy)",
+    undo:"Undo", nothingDone:"Nothing in Done yet",
+    archiveConfirm:"Remove the %n done tasks from the board? You can undo right after.",
+    archived:"%n tasks archived",
+    noDateTasks:"Those tasks don't have a date yet", taskDeleted:"Task deleted",
+    imported:"Backup imported", importBad:"That file doesn't look like a Matriz backup",
+    importConfirm:"The current %n tasks will be replaced by the ones in the file. Continue?",
+    tipBackup:"Tip: save a backup from time to time", lastBackup:"%n days since your last backup", exportNow:"Export now",
+    storageWarn:"This browser won't autosave. Use ⋯ → Export backup before closing.",
+    menuTidy:"⌗  Tidy all zones", menuFit:"⤢  Fit everything on screen", menuReset:"↺  Reset zone positions",
+    menuExport:"⤓  Export backup (.json)", menuImport:"⤒  Import backup", menuIcs:"🗓  Download calendar (.ics)", menuHelp:"?  How to use / install",
+    projectPrefix:"Project: ", fileSched:"scheduled", fileTask:"task",
+    helpUrl:"https://daybydayconsulting.com/tools/matriz", helpUrlLabel:"daybydayconsulting.com/tools/matriz",
+    help:[
+      { h:"Moving around the board", li:[
+        "Drag the background to pan. The canvas has no edges.",
+        "Zoom with <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + wheel, or with the buttons at the bottom right. <kbd>0</kbd> fits everything on screen.",
+        "On a trackpad, two fingers pan and pinch zooms." ]},
+      { h:"Tasks", li:[
+        "<b>Double-click</b> anywhere to create a task right there.",
+        "Drag cards wherever you want: inside Done it's marked automatically, in Scheduled it asks for a date, and in the Matrix it takes the quadrant it lands in.",
+        "A card can stay outside every zone, floating on the canvas. That's a valid place: loose ideas live there.",
+        "The little circle in the corner marks it done with one click — and brings it back if you change your mind.",
+        "Click a card to open its details: project, date, notes and subtasks." ]},
+      { h:"Zones", li:[
+        "<b>Today's 3 priorities</b> is the top band: drag there what must get done today no matter what. They're numbered left to right.",
+        "<b>In progress</b> is the green band: what you're working on right now.",
+        "Drag a zone's title to move it with everything inside.",
+        "Stretch the little square at the bottom-right corner to resize it.",
+        "The <b>⌗</b> icon on a title tidies the cards inside into a grid, keeping each one in its quadrant.",
+        "If something feels off, <b>⋯ → Reset zone positions</b> puts everything back." ]},
+      { h:"Language", li:[
+        "The <b>ES</b>/<b>EN</b> button in the bar switches the whole interface on the spot." ]},
+      { h:"Google Calendar & Outlook", li:[
+        "Open a task, set a date and hit Send to Google Calendar: the event opens pre-filled — just save it.",
+        "The <b>↓</b> button on the Scheduled title downloads everything as an .ics you can import in one go." ]},
+      { h:"Search", li:[
+        "<kbd>/</kbd> focuses the search box. It looks into titles, projects, notes and subtasks at once.",
+        "<kbd>Enter</kbd> jumps from one result to the next, centering the canvas on each." ]},
+      { h:"Install as an app", li:[
+        "Download the native Mac app at <b>{{URL}}</b>.",
+        "Prefer the single file? Save <code>matriz.html</code>, open it in Chrome and use <b>⋮ → Cast, save and share → Create shortcut…</b> with <b>Open as window</b>." ]},
+      { h:"Your data", li:[
+        "Stored on this computer. Nothing goes to any server.",
+        "Every now and then use <b>⋯ → Export backup</b>. Import backup restores it." ]}
+    ]
+  }
+};
+function T(k, n) {
+  const d = I18N[lang] || I18N.es;
+  let s = d[k] !== undefined ? d[k] : (I18N.es[k] !== undefined ? I18N.es[k] : k);
+  if (n !== undefined) s = String(s).replace("%n", n);
+  return s;
+}
+
 /* ------------------------------ datos ---------------------------------- */
 function baseRegions() {
   return [
@@ -369,32 +518,40 @@ function baseRegions() {
   ];
 }
 function seed() {
-  const P = [["Ferra","#2563eb"],["Globalthy","#059669"],["DaybyDay","#d946ef"],["Cartri","#ea580c"],
-             ["Douf","#0891b2"],["Cole","#7c3aed"],["Midas","#e11d48"],["Naza","#65a30d"],
-             ["SFL","#0284c7"],["Huddle","#b45309"],["Personal","#475569"]].map(([name,color]) => ({ name, color }));
+  const es = lang === "es";
+  const P = (es
+    ? [["Trabajo","#2563eb"],["Cliente","#d946ef"],["Personal","#059669"]]
+    : [["Work","#2563eb"],["Client","#d946ef"],["Personal","#059669"]]
+  ).map(([name,color]) => ({ name, color }));
   const R = baseRegions(), D = R.find(r => r.kind === "done"), M = R.find(r => r.kind === "matrix"), G = R.find(r => r.kind === "sched");
+  const proj = P.map(p => p.name);
   const mk = (title, project, wx, wy, extra) => Object.assign({
     id: uid(), title, project, notes:"", subtasks:[], date:"", time:"",
     wx, wy, zone:"free", createdAt: Date.now(), doneAt:null }, extra || {});
 
-  const mat = [
-    ["Seguro Ferra Miguel","Ferra",.13,.07],["Contenido Master Ferra Miguel","Ferra",.14,.17],
-    ["Influs Ferra","Ferra",.10,.28],["Lista Contenido Cartri","Cartri",.14,.38],
-    ["Blogposting Pipeline","DaybyDay",.62,.16],["Lista Reach DaybyDay","DaybyDay",.64,.27],
-    ["10 reach al día DaybyDay","DaybyDay",.64,.38],["Virgencita Cole","Cole",.72,.48],
-    ["Packaging Ferra","Ferra",.44,.46],["Web Ferra","Ferra",.44,.57],
-    ["Comunicar Web Douf Live","Douf",.32,.71],["Duolingo Italiano","Personal",.64,.71]
-  ].map(([t,p,fx,fy]) => mk(t, p, Math.round(M.x + fx*M.w - CARD_W/2), Math.round(M.y + fy*M.h - 26), { zone:"matrix" }));
+  const mat = (es ? [
+    ["Terminar la propuesta del trimestre", proj[0], .13,.07],["Rediseñar la web", proj[0], .14,.17],
+    ["Llamar a tres proveedores", proj[1], .10,.28],["Revisar las cuentas del mes", proj[2], .14,.38],
+    ["Preparar la campaña de otoño", proj[0], .62,.16],["Ordenar el archivo de facturas", proj[0], .64,.27],
+    ["Curso de idiomas · unidad 4", proj[2], .64,.38]
+  ] : [
+    ["Finish the quarterly proposal", proj[0], .13,.07],["Redesign the website", proj[0], .14,.17],
+    ["Follow up with three suppliers", proj[1], .10,.28],["Review this month's numbers", proj[2], .14,.38],
+    ["Plan the autumn campaign", proj[0], .62,.16],["Tidy up the invoice archive", proj[0], .64,.27],
+    ["Language course · unit 4", proj[2], .64,.38]
+  ]).map(([t,p,fx,fy]) => mk(t, p, Math.round(M.x + fx*M.w - CARD_W/2), Math.round(M.y + fy*M.h - 26), { zone:"matrix" }));
 
-  const done = [["Auditoría Globalthy","Globalthy"],["PPT Midas","Midas"],["Creas Globalthy","Globalthy"],
-    ["Naza Macetas-Cajas","Naza"],["Taller coche bomba de agua – Septiembre","Personal"],["Impresiones SFL","SFL"],
-    ["Cuenta Meta Globalthy","Globalthy"],["Onboarding llamada Carlos nuevo cliente","DaybyDay"],
-    ["3D Propuesta Huddle","Huddle"],["Web Cartri todo 50% Off Liquidación","Cartri"],["Web Douf Actualizada","Douf"]
-  ].map(([t,p], i) => mk(t, p, D.x + 28, D.y + 24 + i*64, { zone:"done" }));
+  const done = (es ? [
+    ["Enviar el informe mensual", proj[0]],["Preparar la reunión del lunes", proj[0]]
+  ] : [
+    ["Send the monthly report", proj[0]],["Prep Monday's meeting", proj[0]]
+  ]).map(([t,p], i) => mk(t, p, D.x + 28, D.y + 24 + i*64, { zone:"done" }));
 
-  const sched = [ mk("Lanzar Piloto Globalthy","Globalthy", G.x + 32, G.y + 24, { zone:"sched", date:"2026-09-01" }) ];
+  const d5 = new Date(Date.now() + 5*864e5);
+  const in5 = d5.getFullYear() + "-" + String(d5.getMonth()+1).padStart(2,"0") + "-" + String(d5.getDate()).padStart(2,"0");
+  const sched = [ mk(es ? "Demo con el cliente" : "Demo with the client", proj[1], G.x + 32, G.y + 24, { zone:"sched", date:in5 }) ];
 
-  return { v:2, theme:"light", view:null, projects:P, regions:R, tasks:[...mat, ...done, ...sched] };
+  return { v:2, theme:"light", view:null, lang, projects:P, regions:R, tasks:[...mat, ...done, ...sched] };
 }
 
 /* ------------------ migración desde la versión de columnas -------------- */
@@ -435,8 +592,8 @@ function save(now) {
       S.view = { x: view.x, y: view.y, k: view.k };
       localStorage.setItem(KEY, JSON.stringify(S));
       const d = new Date();
-      $("#savedAt").textContent = "Guardado " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
-    } catch (e) { storageOK = false; $("#savedAt").textContent = "⚠ sin guardar"; $("#savedAt").style.color = "var(--danger)"; }
+      $("#savedAt").textContent = T("saved") + " " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+    } catch (e) { storageOK = false; $("#savedAt").textContent = T("notSaved"); $("#savedAt").style.color = "var(--danger)"; }
   };
   now ? go() : (saveT = setTimeout(go, 200));
 }
@@ -462,6 +619,8 @@ let S = load() || seed();
 S.projects = S.projects || [];
 S.regions = ensureRegions(S.regions);
 S.tasks.forEach(t => { t.subtasks = t.subtasks || []; t.notes = t.notes || ""; });
+if (S.lang) lang = S.lang === "en" ? "en" : "es";
+S.lang = lang;
 
 const view = Object.assign({ x:0, y:0, k:1 }, S.view || {});
 let q = "", pfilter = null, openId = null, hitList = [], hitIx = -1;
@@ -535,16 +694,18 @@ function centerOnTask(t, animate) {
 }
 
 /* ------------------------------ fechas ---------------------------------- */
-const MES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MES = { es:["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"],
+              en:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] };
+const mes = i => (MES[lang] || MES.es)[i];
 const pad = n => String(n).padStart(2, "0");
 const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); };
 function fmtDate(iso) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
   if (!y) return iso;
-  return d + " " + MES[m-1] + (y === new Date().getFullYear() ? "" : " " + String(y).slice(2));
+  return d + " " + mes(m-1) + (y === new Date().getFullYear() ? "" : " " + String(y).slice(2));
 }
-const fmtDay = ts => { const d = new Date(ts); return d.getDate() + " " + MES[d.getMonth()]; };
+const fmtDay = ts => { const d = new Date(ts); return d.getDate() + " " + mes(d.getMonth()); };
 const isLate = t => t.date && t.date < todayISO();
 
 /* ------------------------------ zonas ----------------------------------- */
@@ -560,8 +721,8 @@ function quadOf(t) {
   const cx = t.wx + CARD_W/2, cy = t.wy + 28;
   return (cx < M.x + M.w/2 ? 0 : 1) + (cy < M.y + M.h/2 ? 0 : 2);
 }
-const QNAME = ["EJECUTAR","PROGRAMAR","DELEGAR","IGNORAR"];
-const ZLABEL = { done:"Hecho", doing:"En ejecución", top3:"3 prioridades hoy", sched:"Programado", matrix:"Matriz", free:"Suelta en el lienzo" };
+const qname = i => T(["q0","q1","q2","q3"][i] || "q0");
+const zlabel = k => T({ done:"zoneDone", doing:"zoneDoing", top3:"zoneTop3", sched:"zoneSched", matrix:"zoneMatrix", free:"zoneFree" }[k] || "zoneFree");
 
 /* ------------------------------ tarjetas -------------------------------- */
 /* número de prioridad dentro de "3 prioridades hoy": por posición, izq → der */
@@ -577,20 +738,20 @@ function cardEl(t) {
   el.style.left = t.wx + "px"; el.style.top = t.wy + "px";
   const subs = t.subtasks || [], dn = subs.filter(s => s.done).length;
   let meta = "";
-  if (t.zone === "top3") { const rk = top3Rank(t); meta += '<span class="rank' + (rk > 3 ? " over" : "") + '" title="Prioridad ' + rk + ' de hoy">' + rk + "</span>"; }
+  if (t.zone === "top3") { const rk = top3Rank(t); meta += '<span class="rank' + (rk > 3 ? " over" : "") + '" title="' + esc(T("rankTitle", rk)) + '">' + rk + "</span>"; }
   if (t.project) meta += '<span class="pj"><i></i>' + esc(t.project) + "</span>";
   if (subs.length) meta += '<span class="badge' + (dn === subs.length ? " full" : "") + '">' + dn + "/" + subs.length + "</span>";
-  if ((t.notes || "").trim()) meta += '<span class="badge" title="Tiene notas">✎</span>';
-  if (t.zone === "doing") meta += '<span class="badge run">▶ en curso</span>';
+  if ((t.notes || "").trim()) meta += '<span class="badge" title="' + esc(T("notesLabel")) + '">✎</span>';
+  if (t.zone === "doing") meta += '<span class="badge run">' + esc(T("inProgress")) + "</span>";
   if (t.zone === "sched") meta += t.date
     ? '<span class="date' + (isLate(t) ? " late" : "") + '">' + fmtDate(t.date) + (t.time ? " · " + t.time : "") + "</span>"
-    : '<span class="badge">sin fecha</span>';
+    : '<span class="badge">' + esc(T("noDate")) + "</span>";
   if (t.zone === "done" && t.doneAt) meta += '<span class="badge">' + fmtDay(t.doneAt) + "</span>";
   el.innerHTML =
     '<div class="t">' + esc(t.title) + "</div>" +
     (meta ? '<div class="meta">' + meta + "</div>" : "") +
     '<button class="tick' + (t.zone === "done" ? " on" : "") + '" data-tick="' + t.id + '" title="' +
-      (t.zone === "done" ? "Sacar de Hecho" : "Marcar como hecho") + '">' +
+      (t.zone === "done" ? esc(T("tickUndone")) : esc(T("tickDone"))) + '">' +
       '<svg viewBox="0 0 12 12"><path d="M2 6.2l2.6 2.6L10 3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
   if (!matches(t)) el.classList.add("dim"); else if (q) el.classList.add("hit");
   return el;
@@ -622,12 +783,12 @@ function renderRegions() {
     const n = counts[r.kind] || 0;
     let inner =
       '<div class="rgn-head" data-rhead="' + r.id + '">' +
-        '<span class="rgn-name">' + esc(r.name) + "</span>" +
+        '<span class="rgn-name">' + esc(zlabel(r.kind)) + "</span>" +
         '<span class="rgn-n' + (r.kind === "top3" && n > 3 ? " over" : "") + '">' + (r.kind === "top3" ? n + "/3" : n) + "</span>" +
         '<span class="rgn-act">' +
-          '<button data-tidy="' + r.id + '" title="Ordenar lo que hay dentro">⌗</button>' +
-          (r.kind === "sched" ? '<button data-ics="1" title="Descargar todo en .ics">↓</button>' : "") +
-          (r.kind === "done" ? '<button data-clear="1" title="Archivar lo hecho">✕</button>' : "") +
+          '<button data-tidy="' + r.id + '" title="' + esc(T("tidyTitle")) + '">⌗</button>' +
+          (r.kind === "sched" ? '<button data-ics="1" title="' + esc(T("icsTitle")) + '">↓</button>' : "") +
+          (r.kind === "done" ? '<button data-clear="1" title="' + esc(T("clearTitle")) + '">✕</button>' : "") +
         "</span></div>" +
       '<div class="rgn-grip" data-grip="' + r.id + '"></div>';
     if (r.kind === "matrix") {
@@ -635,15 +796,15 @@ function renderRegions() {
       S.tasks.filter(t => t.zone === "matrix").forEach(t => { const i = quadOf(t); if (i >= 0) qc[i]++; });
       inner +=
         '<div class="cross-v"></div><div class="cross-h"></div>' +
-        '<div class="axl t">+ Importante</div><div class="axl b">− Importante</div>' +
-        '<div class="axl l">+ Urgente</div><div class="axl r">− Urgente</div>' +
-        '<div class="qn a">EJECUTAR<i>' + (qc[0] || "") + '</i></div>' +
-        '<div class="qn b">PROGRAMAR<i>' + (qc[1] || "") + '</i></div>' +
-        '<div class="qn c">DELEGAR<i>' + (qc[2] || "") + '</i></div>' +
-        '<div class="qn d">IGNORAR<i>' + (qc[3] || "") + '</i></div>';
+        '<div class="axl t">' + esc(T("axImpPos")) + '</div><div class="axl b">' + esc(T("axImpNeg")) + '</div>' +
+        '<div class="axl l">' + esc(T("axUrgPos")) + '</div><div class="axl r">' + esc(T("axUrgNeg")) + '</div>' +
+        '<div class="qn a">' + esc(T("q0")) + '<i>' + (qc[0] || "") + '</i></div>' +
+        '<div class="qn b">' + esc(T("q1")) + '<i>' + (qc[1] || "") + '</i></div>' +
+        '<div class="qn c">' + esc(T("q2")) + '<i>' + (qc[2] || "") + '</i></div>' +
+        '<div class="qn d">' + esc(T("q3")) + '<i>' + (qc[3] || "") + '</i></div>';
     } else if (!counts[r.kind]) {
-      const hint = { done:"Suelta aquí lo que completes", doing:"Suelta aquí lo que estés haciendo ya", top3:"Arrastra aquí las 3 que tienen que caer hoy", sched:"Suelta aquí lo que tenga fecha" };
-      inner += '<div class="rgn-hint">' + (hint[r.kind] || "") + "</div>";
+      const hints = { done:"hintDone", doing:"hintDoing", top3:"hintTop3", sched:"hintSched" };
+      inner += '<div class="rgn-hint">' + esc(T(hints[r.kind] || "hintSched")) + "</div>";
     }
     el.innerHTML = inner;
     layerR.appendChild(el);
@@ -866,7 +1027,7 @@ vp.addEventListener("click", e => {
 vp.addEventListener("click", e => {
   const t1 = e.target.closest("[data-tidy]"), t2 = e.target.closest("[data-ics]"), t3 = e.target.closest("[data-clear]");
   if (t1) { e.stopPropagation(); tidyRegion(t1.dataset.tidy); }
-  if (t2) { e.stopPropagation(); downloadIcs(S.tasks.filter(t => t.zone === "sched"), "programado"); }
+  if (t2) { e.stopPropagation(); downloadIcs(S.tasks.filter(t => t.zone === "sched"), T("fileSched")); }
   if (t3) { e.stopPropagation(); archiveDone(); }
 });
 
@@ -934,11 +1095,11 @@ function tidyRegion(id) {
 }
 function archiveDone() {
   const gone = S.tasks.filter(t => t.zone === "done");
-  if (!gone.length) return toast("No hay nada en Hecho");
-  if (!confirm("¿Quitar del lienzo las " + gone.length + " tareas de Hecho? Puedes deshacerlo justo después.")) return;
+  if (!gone.length) return toast(T("nothingDone"));
+  if (!confirm(T("archiveConfirm", gone.length))) return;
   S.tasks = S.tasks.filter(t => t.zone !== "done");
   render(); save();
-  toast(gone.length + " tareas archivadas", "Deshacer", () => { S.tasks.push(...gone); render(); save(); });
+  toast(T("archived", gone.length), T("undo"), () => { S.tasks.push(...gone); render(); save(); });
 }
 
 /* ------------------------------ composer -------------------------------- */
@@ -949,10 +1110,10 @@ function openComposer(worldPt, screenPt) {
   const c = document.createElement("div");
   c.className = "composer";
   c.innerHTML =
-    '<input class="ci" placeholder="Nueva tarea…" spellcheck="false">' +
-    '<div class="row"><input class="cp" list="projList" placeholder="Proyecto" spellcheck="false">' +
-    '<button class="btn sm btn-primary" data-ok>Añadir</button></div>' +
-    '<div class="hint">Enter para añadir · Esc para cerrar</div>';
+    '<input class="ci" placeholder="' + esc(T("compTitle")) + '" spellcheck="false">' +
+    '<div class="row"><input class="cp" list="projList" placeholder="' + esc(T("compProject")) + '" spellcheck="false">' +
+    '<button class="btn sm btn-primary" data-ok>' + esc(T("compAdd")) + '</button></div>' +
+    '<div class="hint">' + esc(T("compHint")) + '</div>';
   c.style.left = clamp(screenPt.x - 20, 8, innerWidth - 250) + "px";
   c.style.top  = clamp(screenPt.y - 16, 70, innerHeight - 140) + "px";
   document.body.appendChild(c);
@@ -993,39 +1154,39 @@ function openDetail(id) {
   openId = id;
   const d = $("#detail"); d.hidden = false;
   const subs = t.subtasks || [], dn = subs.filter(s => s.done).length;
-  const zl = t.zone === "matrix" ? "Matriz · " + QNAME[quadOf(t)] : ZLABEL[t.zone];
+  const zl = t.zone === "matrix" ? T("zoneMatrix") + " · " + qname(quadOf(t)) : zlabel(t.zone);
   d.innerHTML =
   '<header><span style="width:9px;height:9px;border-radius:50%;background:' + projColor(t.project) + '"></span>' +
     '<span class="zone">' + esc(zl) + '</span><span style="flex:1"></span>' +
-    '<button class="iconbtn" data-find title="Centrar en el lienzo">⌖</button>' +
-    '<button class="iconbtn" data-close title="Cerrar">×</button></header>' +
+    '<button class="iconbtn" data-find title="' + esc(T("findTitle")) + '">⌖</button>' +
+    '<button class="iconbtn" data-close title="' + esc(T("closeTitle")) + '">×</button></header>' +
   '<div class="body">' +
     '<div class="field"><textarea id="dTitle" rows="2" spellcheck="false">' + esc(t.title) + '</textarea></div>' +
-    '<div class="field"><label>Proyecto</label><input id="dProj" list="projList" value="' + esc(t.project) + '" placeholder="Sin proyecto" spellcheck="false"></div>' +
-    '<div class="field"><label>Llevar a</label><div class="seg" id="dSeg">' +
-      '<button data-z="matrix" class="' + (t.zone === "matrix" ? "on" : "") + '">Matriz</button>' +
-      '<button data-z="doing" class="' + (t.zone === "doing" ? "on" : "") + '">En curso</button>' +
-      '<button data-z="sched" class="' + (t.zone === "sched" ? "on" : "") + '">Programado</button>' +
-      '<button data-z="done" class="' + (t.zone === "done" ? "on" : "") + '">Hecho</button></div></div>' +
-    '<div class="field"><label>Fecha</label><div class="cal-row">' +
+    '<div class="field"><label>' + esc(T("projectLabel")) + '</label><input id="dProj" list="projList" value="' + esc(t.project) + '" placeholder="' + esc(T("projectPh")) + '" spellcheck="false"></div>' +
+    '<div class="field"><label>' + esc(T("moveLabel")) + '</label><div class="seg" id="dSeg">' +
+      '<button data-z="matrix" class="' + (t.zone === "matrix" ? "on" : "") + '">' + esc(T("segMatrix")) + '</button>' +
+      '<button data-z="doing" class="' + (t.zone === "doing" ? "on" : "") + '">' + esc(T("segDoing")) + '</button>' +
+      '<button data-z="sched" class="' + (t.zone === "sched" ? "on" : "") + '">' + esc(T("segSched")) + '</button>' +
+      '<button data-z="done" class="' + (t.zone === "done" ? "on" : "") + '">' + esc(T("segDone")) + '</button></div></div>' +
+    '<div class="field"><label>' + esc(T("dateLabel")) + '</label><div class="cal-row">' +
       '<input type="date" id="dDate" value="' + esc(t.date) + '" style="flex:1.4">' +
       '<input type="time" id="dTime" value="' + esc(t.time) + '" style="flex:1"></div>' +
-      '<div class="cal-row" style="margin-top:2px"><button class="btn sm" id="dGcal" style="flex:1">Enviar a Google Calendar</button></div>' +
+      '<div class="cal-row" style="margin-top:2px"><button class="btn sm" id="dGcal" style="flex:1">' + esc(T("gcal")) + '</button></div>' +
       '<div class="cal-row" style="margin-top:2px">' +
       '<button class="btn sm" id="dOut" style="flex:1">Outlook</button>' +
-      '<button class="btn sm" id="dIcs" style="flex:1" title="Vale para Calendario de Mac y Outlook de escritorio">Descargar .ics</button></div></div>' +
-    '<div class="field"><label>Subtareas' + (subs.length ? " · " + dn + "/" + subs.length : "") + '</label>' +
+      '<button class="btn sm" id="dIcs" style="flex:1" title="' + esc(T("dlIcsTitle")) + '">' + esc(T("dlIcs")) + '</button></div></div>' +
+    '<div class="field"><label>' + esc(T("subtasksLabel")) + (subs.length ? " · " + dn + "/" + subs.length : "") + '</label>' +
       (subs.length ? '<div class="progbar"><i style="width:' + (dn / subs.length * 100) + '%"></i></div>' : "") +
       '<div class="subs" id="dSubs">' + subs.map((s, i) =>
         '<div class="sub' + (s.done ? " ok" : "") + '" data-i="' + i + '">' +
         '<input type="checkbox"' + (s.done ? " checked" : "") + '>' +
         '<span contenteditable="true" spellcheck="false">' + esc(s.text) + '</span>' +
-        '<button class="del" title="Quitar">×</button></div>').join("") + '</div>' +
-      '<input id="dSubNew" placeholder="+ Añadir subtarea" spellcheck="false"></div>' +
-    '<div class="field"><label>Notas</label><textarea id="dNotes" rows="5" placeholder="Detalles, enlaces, contexto…">' + esc(t.notes) + '</textarea></div>' +
+        '<button class="del" title="' + esc(T("removeTitle")) + '">×</button></div>').join("") + '</div>' +
+      '<input id="dSubNew" placeholder="' + esc(T("subtaskPh")) + '" spellcheck="false"></div>' +
+    '<div class="field"><label>' + esc(T("notesLabel")) + '</label><textarea id="dNotes" rows="5" placeholder="' + esc(T("notesPh")) + '">' + esc(t.notes) + '</textarea></div>' +
   '</div>' +
-  '<footer><button class="btn sm" id="dDup">Duplicar</button><span style="flex:1"></span>' +
-    '<button class="btn sm danger" id="dDel">Eliminar</button></footer>';
+  '<footer><button class="btn sm" id="dDup">' + esc(T("dup")) + '</button><span style="flex:1"></span>' +
+    '<button class="btn sm danger" id="dDel">' + esc(T("del")) + '</button></footer>';
 
   const soft = () => { save(); redrawCard(t); };
   const hard = () => { save(); render(); openDetail(id); };
@@ -1058,10 +1219,10 @@ function openDetail(id) {
   });
   $("#dGcal", d).addEventListener("click", () => window.open(gcalUrl(t), "_blank", "noopener"));
   $("#dOut", d).addEventListener("click", () => window.open(outlookUrl(t), "_blank", "noopener"));
-  $("#dIcs", d).addEventListener("click", () => downloadIcs([t], "tarea"));
+  $("#dIcs", d).addEventListener("click", () => downloadIcs([t], T("fileTask")));
   $("#dDup", d).addEventListener("click", () => {
     const c = JSON.parse(JSON.stringify(t));
-    c.id = uid(); c.title = t.title + " (copia)"; c.createdAt = Date.now(); c.wy = t.wy + 64;
+    c.id = uid(); c.title = t.title + T("copySuffix"); c.createdAt = Date.now(); c.wy = t.wy + 64;
     S.tasks.push(c); render(); save(); openDetail(c.id); flash(c.id);
   });
   $("#dDel", d).addEventListener("click", () => removeTask(t.id));
@@ -1082,7 +1243,7 @@ function removeTask(id) {
   const i = S.tasks.findIndex(t => t.id === id); if (i < 0) return;
   const [t] = S.tasks.splice(i, 1);
   closeDetail(); render(); save();
-  toast("Tarea eliminada", "Deshacer", () => { S.tasks.push(t); render(); save(); flash(t.id); });
+  toast(T("taskDeleted"), T("undo"), () => { S.tasks.push(t); render(); save(); flash(t.id); });
 }
 
 /* -------------------------------- toast --------------------------------- */
@@ -1119,7 +1280,7 @@ function calRange(t) {
 }
 function calDetails(t) {
   const p = [];
-  if (t.project) p.push("Proyecto: " + t.project);
+  if (t.project) p.push(T("projectPrefix") + t.project);
   if ((t.notes || "").trim()) p.push(t.notes.trim());
   if ((t.subtasks || []).length) p.push(t.subtasks.map(s => (s.done ? "☑ " : "☐ ") + s.text).join("\n"));
   return p.join("\n\n");
@@ -1167,7 +1328,7 @@ function download(name, text, type) {
 }
 function downloadIcs(list, base) {
   const ok = list.filter(t => t.date);
-  if (!ok.length) return toast("Esas tareas todavía no tienen fecha");
+  if (!ok.length) return toast(T("noDateTasks"));
   download("matriz-" + base + ".ics", buildIcs(ok), "text/calendar;charset=utf-8");
 }
 function exportJson() {
@@ -1197,13 +1358,13 @@ $("#btnMenu").addEventListener("click", e => {
   const m = document.createElement("div");
   m.className = "menu";
   m.innerHTML =
-    '<button data-a="tidy">⌗  Ordenar todas las zonas</button>' +
-    '<button data-a="fit">⤢  Encajar todo en pantalla</button>' +
-    '<button data-a="reset">↺  Recolocar las zonas</button><hr>' +
-    '<button data-a="export">⤓  Exportar copia (.json)</button>' +
-    '<button data-a="import">⤒  Importar copia</button>' +
-    '<button data-a="ics">🗓  Descargar calendario (.ics)</button><hr>' +
-    '<button data-a="help">?  Cómo se usa / instalar</button>';
+    '<button data-a="tidy">' + esc(T("menuTidy")) + '</button>' +
+    '<button data-a="fit">' + esc(T("menuFit")) + '</button>' +
+    '<button data-a="reset">' + esc(T("menuReset")) + '</button><hr>' +
+    '<button data-a="export">' + esc(T("menuExport")) + '</button>' +
+    '<button data-a="import">' + esc(T("menuImport")) + '</button>' +
+    '<button data-a="ics">' + esc(T("menuIcs")) + '</button><hr>' +
+    '<button data-a="help">' + esc(T("menuHelp")) + '</button>';
   document.body.appendChild(m);
   m.addEventListener("click", ev => {
     const b = ev.target.closest("[data-a]"); if (!b) return;
@@ -1218,7 +1379,7 @@ $("#btnMenu").addEventListener("click", e => {
     }
     if (a === "export") exportJson();
     if (a === "import") $("#fileIn").click();
-    if (a === "ics") downloadIcs(S.tasks.filter(t => t.zone === "sched"), "programado");
+    if (a === "ics") downloadIcs(S.tasks.filter(t => t.zone === "sched"), T("fileSched"));
     if (a === "help") help();
   });
 });
@@ -1229,12 +1390,13 @@ $("#fileIn").addEventListener("change", e => {
     try {
       let d = JSON.parse(rd.result);
       if (!d || !Array.isArray(d.tasks)) throw 0;
-      if (!confirm("Se sustituirán las " + S.tasks.length + " tareas actuales por las " + d.tasks.length + " del archivo. ¿Seguir?")) return;
+      if (!confirm(T("importConfirm", S.tasks.length))) return;
       if (d.v !== 2) d = migrate(d);
       S = d; S.projects = S.projects || []; S.regions = ensureRegions(S.regions);
       S.tasks.forEach(t => { t.subtasks = t.subtasks || []; t.notes = t.notes || ""; });
-      render(); save(true); fitView(true); toast("Copia importada");
-    } catch (_) { toast("Ese archivo no parece una copia de Matriz"); }
+      S.lang = lang;
+      render(); save(true); fitView(true); toast(T("imported"));
+    } catch (_) { toast(T("importBad")); }
   };
   rd.readAsText(f); e.target.value = "";
 });
@@ -1243,49 +1405,41 @@ $("#fileIn").addEventListener("change", e => {
 function help() {
   const b = document.createElement("div");
   b.className = "backdrop";
+  const H = I18N[lang].help.map(sec =>
+    "<h4>" + sec.h + "</h4><ul>" + sec.li.map(x =>
+      "<li>" + x.replace("{{URL}}", '<a href="' + I18N[lang].helpUrl + '" target="_blank" rel="noopener">' + I18N[lang].helpUrlLabel + "</a>") + "</li>"
+    ).join("") + "</ul>").join("");
   b.innerHTML =
-  '<div class="sheet"><div class="h"><h3>Cómo se usa</h3><span style="flex:1"></span>' +
-  '<button class="iconbtn" data-x>×</button></div><div class="c">' +
-  '<h4>Moverse por la pizarra</h4><ul>' +
-  '<li>Arrastra el fondo para desplazarte. El lienzo no tiene bordes.</li>' +
-  '<li>Zoom con <kbd>⌘</kbd>/<kbd>Ctrl</kbd> + rueda, o con los botones de abajo a la derecha. <kbd>0</kbd> encaja todo en pantalla.</li>' +
-  '<li>Con el trackpad, dos dedos desplazan y pellizcar hace zoom.</li>' +
-  '</ul>' +
-  '<h4>Tareas</h4><ul>' +
-  '<li><b>Doble clic</b> en cualquier punto crea una tarea justo ahí.</li>' +
-  '<li>Arrastra las tarjetas donde quieras. Si sueltas una dentro de Hecho se marca sola; dentro de Programado se le pide fecha; dentro de la matriz coge su cuadrante según dónde caiga.</li>' +
-  '<li>Una tarjeta puede quedarse fuera de todas las zonas, flotando en el lienzo. Es un sitio válido: ahí es donde van las ideas sueltas.</li>' +
-  '<li>El círculo de la esquina la da por hecha de un clic, y la devuelve si te equivocas.</li>' +
-  '<li>Un clic abre el detalle: proyecto, fecha, notas y subtareas.</li>' +
-  '</ul>' +
-  '<h4>Zonas</h4><ul>' +
-  '<li>Arrastra el título de una zona para moverla entera con lo que tenga dentro.</li>' +
-  '<li>Estira el cuadradito de la esquina inferior derecha para agrandarla o encogerla.</li>' +
-  '<li>El icono <b>⌗</b> del título ordena en rejilla lo que hay dentro, sin sacarlo de su cuadrante.</li>' +
-  '<li><b>En ejecución</b> es la banda de encima de la matriz: deja ahí lo que estás haciendo ahora mismo.</li>' +
-  '<li><b>3 prioridades hoy</b> va arriba del todo: arrastra ahí lo que tiene que quedar hecho hoy sí o sí. Se numeran por su orden, de izquierda a derecha; si pasas de 3, el contador se pone en rojo.</li>' +
-  '<li>Si algo no te encaja, en <b>⋯ → Recolocar las zonas</b> vuelven a su sitio de fábrica.</li>' +
-  '</ul>' +
-  '<h4>Google Calendar y Outlook</h4><ul>' +
-  '<li>Abre una tarea, ponle fecha y pulsa Enviar a Google Calendar: se abre el evento ya relleno, solo hay que guardarlo.</li>' +
-  '<li>El botón <b>↓</b> del título de Programado descarga todo en un .ics para importarlo de golpe en Google, Outlook o Calendario de Mac.</li>' +
-  '</ul>' +
-  '<h4>Buscar</h4><ul>' +
-  '<li><kbd>/</kbd> enfoca el buscador. Busca en títulos, proyectos, notas y subtareas a la vez.</li>' +
-  '<li>Con <kbd>Enter</kbd> saltas de un resultado al siguiente y el lienzo se centra en cada uno.</li>' +
-  '</ul>' +
-  '<h4>Instalarlo como app en el Mac</h4><ul>' +
-  '<li>Guarda <code>matriz.html</code> en una carpeta fija.</li>' +
-  '<li>Ábrelo con Chrome y ve a <b>⋮ → Enviar, guardar y compartir → Crear acceso directo…</b>, marca <b>Abrir como ventana</b>.</li>' +
-  '<li>Te queda un icono propio en el Dock que abre solo la pizarra.</li>' +
-  '</ul>' +
-  '<h4>Los datos</h4><ul>' +
-  '<li>Se guardan en este ordenador y en este navegador. No salen a ningún servidor.</li>' +
-  '<li>De vez en cuando usa <b>⋯ → Exportar copia</b>. Se recupera con Importar copia.</li>' +
-  '</ul></div></div>';
+  '<div class="sheet"><div class="h"><h3>' + esc(T("helpTitle")) + '</h3><span style="flex:1"></span>' +
+  '<button class="iconbtn" data-x>×</button></div><div class="c">' + H +
+  '</div></div>';
   b.addEventListener("click", e => { if (e.target === b || e.target.closest("[data-x]")) b.remove(); });
   document.body.appendChild(b);
 }
+
+/* -------------------------------- idioma -------------------------------- */
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.title = T("docTitle");
+  $("#search").placeholder = T("search");
+  $("#sPrev").title = T("searchPrev"); $("#sNext").title = T("searchNext"); $("#sClear").title = T("searchClear");
+  $("#btnNew").textContent = T("newTask");
+  $("#btnTheme").title = T("themeTitle"); $("#btnMenu").title = T("moreTitle");
+  $("#btnLang").textContent = lang.toUpperCase(); $("#btnLang").title = T("langTitle");
+  $("#zOut").title = T("zoomOut"); $("#zIn").title = T("zoomIn");
+  $("#zFit").title = T("zoomFit"); $("#zLvl").title = T("zoom100");
+  const h = $("#hintbar"); if (h) h.textContent = T("hintbar");
+  $("#today").textContent = new Intl.DateTimeFormat(lang === "es" ? "es-ES" : "en-US",
+    { weekday:"long", day:"numeric", month:"long" }).format(new Date());
+}
+$("#btnLang").addEventListener("click", () => {
+  lang = lang === "es" ? "en" : "es";
+  S.lang = lang; save(true);
+  closeComposer(); closeMenu();
+  const bd = $(".backdrop"); if (bd) bd.remove();
+  applyLang(); render();
+  if (!$("#detail").hidden && openId) openDetail(openId);
+});
 
 /* --------------------------------- tema --------------------------------- */
 $("#btnTheme").addEventListener("click", () => {
@@ -1323,18 +1477,18 @@ window.addEventListener("beforeunload", () => save(true));
 (function init() {
   document.documentElement.dataset.theme = S.theme === "dark" ? "dark" : "light";
   if (S.seenHint) $("#hintbar").remove();
-  $("#today").textContent = new Intl.DateTimeFormat("es-ES", { weekday:"long", day:"numeric", month:"long" }).format(new Date());
+  applyLang();
   render();
   S.view ? applyView() : fitView(false);
   save(true);
   const days = S.lastExport ? Math.floor((Date.now() - S.lastExport) / 864e5) : null;
   if (days === null || days >= 21)
-    setTimeout(() => toast(days === null ? "Consejo: guarda una copia de vez en cuando" : "Hace " + days + " días de la última copia",
-                           "Exportar ahora", exportJson), 2500);
+    setTimeout(() => toast(days === null ? T("tipBackup") : T("lastBackup", days),
+                           T("exportNow"), exportJson), 2500);
   if (!storageOK) {
     const w = document.createElement("div");
     w.className = "warn";
-    w.textContent = "Este navegador no deja guardar automáticamente. Usa ⋯ → Exportar copia antes de cerrar.";
+    w.textContent = T("storageWarn");
     document.body.appendChild(w);
   }
 })();
