@@ -94,6 +94,14 @@ README.es.md           Readme in Spanish
 
 ## Changelog
 
+**2.3 — October 5, 2026**
+- **Liquid glass control layer**: the toolbar, panels, menus, toasts and
+  modals now use an iOS 26-style glass surface (satin border highlights,
+  deeper blur, a sheen that follows the cursor on the toolbar and zoom
+  bar, and elastic press on every control). Cards and zones stay clean
+  and readable — glass belongs to the navigation layer only.
+- Inspired by the design language of `liquid_glass_widgets` (Flutter).
+
 **2.2 — October 5, 2026**
 - Full **English + Spanish interface**, switchable with the ES/EN button
   (per browser/app language on first run).

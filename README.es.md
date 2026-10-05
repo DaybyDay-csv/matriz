@@ -91,6 +91,14 @@ README.es.md           Este readme
 
 ## Novedades
 
+**2.3 — 5 de octubre de 2026**
+- **Capa de control «liquid glass»**: la barra, los paneles, los menús,
+  los avisos y los modales estrenan el vidrio del iOS 26 (canto luminoso,
+  más desenfoque, un brillo que sigue al cursor en la barra y el zoom, y
+  pulsación elástica en todos los controles). Las tarjetas y las zonas se
+  quedan limpias y legibles — el vidrio es solo para la navegación.
+- Inspirado en el lenguaje de diseño de `liquid_glass_widgets` (Flutter).
+
 **2.2 — 5 de octubre de 2026**
 - Interfaz completa en **inglés y español**, conmutables con el botón ES/EN
   (de inicio, según el idioma del navegador o de la app).

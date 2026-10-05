@@ -18,6 +18,14 @@
   --shadow:0 1px 2px rgba(16,24,40,.06), 0 3px 8px rgba(16,24,40,.07);
   --shadow-lg:0 16px 40px rgba(16,24,40,.20), 0 3px 10px rgba(16,24,40,.10);
   --glass:rgba(255,255,255,.88);
+  /* liquid glass — vidrio de la capa de control */
+  --lg-bg:linear-gradient(155deg,rgba(255,255,255,.64),rgba(255,255,255,.32));
+  --lg-bd:rgba(255,255,255,.65);
+  --lg-filter:saturate(190%) blur(22px);
+  --lg-sheen:rgba(255,255,255,.5);
+  --lg-shadow:0 14px 38px rgba(16,24,40,.16),0 3px 10px rgba(16,24,40,.08),
+    inset 0 1px 1px rgba(255,255,255,.95),inset 0 -1px 1px rgba(15,23,42,.06),
+    inset 1px 0 0 rgba(255,255,255,.35),inset -1px 0 0 rgba(255,255,255,.35);
   --rgn-done:rgba(148,163,184,.14); --rgn-matrix:rgba(37,99,235,.055); --rgn-sched:rgba(14,165,233,.11); --rgn-doing:rgba(22,163,74,.10); --rgn-top3:rgba(220,38,38,.05); --rgn-top3-b:rgba(220,38,38,.17);
   --ok:#0f9d58; --danger:#dc2626;
 }
@@ -31,6 +39,14 @@ html[data-theme="dark"]{
   --shadow:0 1px 2px rgba(0,0,0,.5);
   --shadow-lg:0 18px 44px rgba(0,0,0,.6);
   --glass:rgba(17,26,39,.86);
+  /* liquid glass — vidrio de la capa de control */
+  --lg-bg:linear-gradient(155deg,rgba(60,74,96,.52),rgba(18,26,38,.44));
+  --lg-bd:rgba(255,255,255,.16);
+  --lg-filter:saturate(160%) blur(22px);
+  --lg-sheen:rgba(255,255,255,.16);
+  --lg-shadow:0 16px 40px rgba(0,0,0,.55),0 3px 10px rgba(0,0,0,.35),
+    inset 0 1px 1px rgba(255,255,255,.28),inset 0 -1px 1px rgba(0,0,0,.28),
+    inset 1px 0 0 rgba(255,255,255,.08),inset -1px 0 0 rgba(255,255,255,.08);
   --rgn-done:rgba(148,163,184,.09); --rgn-matrix:rgba(96,165,250,.07); --rgn-sched:rgba(56,189,248,.10); --rgn-doing:rgba(52,211,153,.09); --rgn-top3:rgba(248,113,113,.065); --rgn-top3-b:rgba(248,113,113,.22);
 }
 html,body{height:100%;margin:0;overflow:hidden}
@@ -290,6 +306,48 @@ html[data-theme="dark"] .seg button.on{color:#04101f}
 .warn{position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:60;background:#fef3c7;color:#78350f;
   padding:7px 14px;font-size:12px;border-radius:9px;box-shadow:var(--shadow)}
 @media (max-width:1080px){ .chips{display:none} }
+
+/* ============== liquid glass — la capa de control ============== */
+/* El vidrio es para la navegación y el control (barra, paneles, menús,
+   avisos), nunca para el contenido: las tarjetas se quedan limpias y
+   legibles. Borde luminoso, luz que sigue al cursor y pulsación elástica. */
+.bar,.zoombar,.hintbar,.menu,.composer,.detail,.toast,.sheet{
+  background:var(--lg-bg);
+  -webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter);
+  border-color:var(--lg-bd);
+  box-shadow:var(--lg-shadow);
+}
+.bar{border-radius:18px}
+.zoombar{border-radius:14px}
+.menu{border-radius:14px}
+.composer{border-radius:14px;border-color:var(--accent)}
+.detail{border-color:var(--lg-bd)}
+.toast{border-radius:12px;color:#eef3fa;
+  background:linear-gradient(155deg,rgba(40,50,66,.76),rgba(18,24,36,.7));
+  border:1px solid rgba(255,255,255,.14)}
+.warn{border-radius:12px}
+.backdrop{-webkit-backdrop-filter:blur(7px) saturate(130%);backdrop-filter:blur(7px) saturate(130%)}
+
+/* la luz sigue al cursor sobre el vidrio (solo barra y controles de zoom) */
+.bar::after,.zoombar::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
+  transition:opacity .4s ease;
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,-10%),var(--lg-sheen),transparent 62%);
+}
+.bar:hover::after,.zoombar:hover::after{opacity:1}
+
+/* cabecera de zona: también es control */
+.rgn-head:hover{background:var(--lg-bg);-webkit-backdrop-filter:var(--lg-filter);backdrop-filter:var(--lg-filter);
+  box-shadow:var(--lg-shadow)}
+
+/* pulsación elástica (jelly) en todo lo que se toca */
+.btn,.chip,.zoombar button,.iconbtn,.seg button,.snav button,.rgn-act button,.card .tick,.sub .del{
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),background .12s,border-color .12s,
+             box-shadow .12s,color .12s,opacity .12s,filter .12s;
+}
+.btn:active,.chip:active,.zoombar button:active,.iconbtn:active,.seg button:active,
+.snav button:active,.rgn-act button:active{transform:scale(.93)}
+.card .tick:active{transform:scale(.85)}
 </style>
 </head>
 <body>
@@ -1013,6 +1071,23 @@ $("#zIn").addEventListener("click", () => zoomAt(vp.clientWidth/2, vp.clientHeig
 $("#zOut").addEventListener("click", () => zoomAt(vp.clientWidth/2, vp.clientHeight/2, view.k / 1.25));
 $("#zLvl").addEventListener("click", () => zoomAt(vp.clientWidth/2, vp.clientHeight/2, 1));
 $("#zFit").addEventListener("click", () => fitView(true));
+
+/* luz dinámica del vidrio: el brillo de barra y zoom sigue al cursor */
+function trackSheen(sel) {
+  const el = $(sel); if (!el) return;
+  let px = 0, py = 0, raf = null;
+  el.addEventListener("pointermove", e => {
+    px = e.clientX; py = e.clientY;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", (px - r.left) + "px");
+      el.style.setProperty("--my", (py - r.top) + "px");
+    });
+  });
+}
+trackSheen(".bar"); trackSheen(".zoombar");
 
 /* marcar hecho / sacar de hecho */
 vp.addEventListener("click", e => {
