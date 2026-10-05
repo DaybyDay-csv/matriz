@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Exportar Matriz — copia de seguridad</title>
+<style>
+	body{font-family:-apple-system,system-ui,sans-serif;background:#080d15;color:#e7edf5;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+	.card{background:#101b30;border:1px solid #22314f;border-radius:16px;padding:32px;max-width:520px;width:92%}
+	h1{font-size:20px;margin:0 0 8px}
+	p{color:#94a3b8;font-size:14px;line-height:1.5}
+	ul{color:#cbd5e1;font-size:13px;max-height:180px;overflow:auto;padding-left:18px}
+	button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:12px 22px;font-size:15px;font-weight:600;cursor:pointer}
+	button:hover{background:#1d4ed8}
+	.ok{color:#65a30d;font-weight:600}
+	.warn{color:#e11d48;font-weight:600}
+</style>
+</head>
+<body>
+<div class="card">
+	<h1>Copia de seguridad de Matriz</h1>
+	<p>Esta página lee el almacenamiento local (tus tareas) y te deja descargarlo como JSON para migrarlo a la nueva app nativa. Nada se modifica ni se borra.</p>
+	<div id="info"><p class="warn">Leyendo…</p></div>
+	<ul id="lista"></ul>
+	<button id="dl" style="display:none">Descargar copia (.json)</button>
+	<p id="hint" style="display:none">Si ves 0 claves, abre esta página y matriz.html en la misma carpeta y avísame.</p>
+</div>
+<script>
+	const datos = {};
+	for (let i = 0; i < localStorage.length; i++) {
+		const k = localStorage.key(i);
+		datos[k] = localStorage.getItem(k);
+	}
+	const claves = Object.keys(datos);
+	const bytes = claves.reduce((a, k) => a + k.length + (datos[k] || '').length, 0);
+	const info = document.getElementById('info');
+	const lista = document.getElementById('lista');
+	if (claves.length === 0) {
+		info.innerHTML = '<p class="warn">0 claves encontradas.</p>';
+		document.getElementById('hint').style.display = 'block';
+	} else {
+		info.innerHTML = '<p class="ok">' + claves.length + ' claves encontradas (' + (bytes / 1024).toFixed(1) + ' KB). Todo listo para exportar.</p>';
+		claves.forEach(k => {
+			const li = document.createElement('li');
+			li.textContent = k + ' — ' + ((datos[k] || '').length / 1024).toFixed(1) + ' KB';
+			lista.appendChild(li);
+		});
+		const btn = document.getElementById('dl');
+		btn.style.display = 'inline-block';
+		btn.onclick = () => {
+			const blob = new Blob([JSON.stringify(datos, null, 1)], {type: 'application/json'});
+			const a = document.createElement('a');
+			const d = new Date();
+			a.href = URL.createObjectURL(blob);
+			a.download = 'matriz-backup-' + d.getFullYear() + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '.json';
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			btn.textContent = '¡Descargada! Revísala en Descargas';
+		};
+	}
+</script>
+</body>
+</html>
